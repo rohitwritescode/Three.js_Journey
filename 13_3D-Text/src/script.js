@@ -2,6 +2,8 @@ import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import {FontLoader} from 'three/examples/jsm/loaders/FontLoader'
+import {TextGeometry} from 'three/examples/jsm/geometries/TextGeometry'
 
 /**
  * Base
@@ -15,10 +17,73 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+// Axes Helper
+const axesHelper = new THREE.AxesHelper()
+// scene.add(axesHelper)
+
 /**
  * Textures
  */
 const textureLoader = new THREE.TextureLoader()
+const matcapTexture = textureLoader.load('/textures/matcaps/8.png')
+
+// Fonts
+const fontLoader = new FontLoader()
+fontLoader.load(
+    '/fonts/helvetiker_regular.typeface.json',
+    (font) => {
+        const textGeometry = new TextGeometry(
+            'Hello Three.js',
+            {
+                font: font,
+                size: 0.5,
+                height: 0.2,
+                curveSegments: 5,
+                bevelEnabled: true,
+                bevelThickness: 0.03,
+                bevelSize: 0.02,
+                bevelOffset: 0,
+                bevelSegments: 3
+            }
+        )
+        textGeometry.computeBoundingBox()
+        textGeometry.center()        
+        const material = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+        
+        const text = new THREE.Mesh(textGeometry,material)
+        scene.add(text)
+
+        const donutGeometry = new THREE.TorusGeometry(0.3, 0.1, 20, 45)
+
+        console.time('donuts')
+
+        for (let i = 0; i < 150; i++) {
+            const donut = new THREE.Mesh(donutGeometry,material)
+            donut.position.set(
+                (Math.random() - 0.5) * 10, 
+                (Math.random() - 0.5) * 10, 
+                (Math.random() - 0.5) * 10
+            )
+
+            donut.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                0
+            )
+
+            const scalingFactor = Math.random()
+            donut.scale.set(
+                scalingFactor,
+                scalingFactor,
+                scalingFactor      
+            )
+            scene.add(donut)
+        }
+
+        console.timeEnd('donuts')
+    }
+)
+
 
 /**
  * Object
@@ -28,7 +93,7 @@ const cube = new THREE.Mesh(
     new THREE.MeshBasicMaterial()
 )
 
-scene.add(cube)
+// scene.add(cube)
 
 /**
  * Sizes
