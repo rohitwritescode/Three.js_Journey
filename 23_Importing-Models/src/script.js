@@ -1,6 +1,8 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import * as dat from 'lil-gui'
 
 /**
@@ -14,6 +16,39 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/**
+ * Models
+ */
+ const dracoLoader = new DRACOLoader()
+ dracoLoader.setDecoderPath('/draco/')
+
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+let mixer = null
+gltfLoader.load(
+    '/models/Fox/glTF/Fox.gltf',
+    (gltf) => {
+        mixer = new THREE.AnimationMixer(gltf.scene)
+        const action = mixer.clipAction(gltf.animations[2])
+        action.play()
+
+        // scene.add(gltf.scene.children[0])
+
+        // while(gltf.scene.children.length) {
+        //     scene.add(gltf.scene.children[0])
+        // }
+
+        // const children = [...gltf.scene.children]
+        // for (const child of children) {
+        //     scene.add(child)
+        // }
+
+        gltf.scene.scale.set(0.025, 0.025, 0.025)
+        scene.add(gltf.scene)
+    }
+)
 
 /**
  * Floor
@@ -55,8 +90,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -105,6 +139,11 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
+
+    // Update mixer
+    if(mixer) {
+        mixer.update(deltaTime)    
+    }
 
     // Update controls
     controls.update()
