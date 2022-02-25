@@ -3,6 +3,14 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as dat from 'lil-gui'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { DotScreenPass } from 'three/examples/jsm/postprocessing/DotScreenPass'
+import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader'
+import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader'
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass'
 
 /**
  * Base
@@ -103,6 +111,10 @@ window.addEventListener('resize', () =>
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    
+    // Update effect composer
+    effectComposer.setSize(sizes.width, sizes.height)
+    effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
 /**
@@ -133,6 +145,50 @@ renderer.toneMappingExposure = 1.5
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+// Post Processing
+const renderTarget = new THREE.WebGLRenderTarget(
+    800,
+    600,
+    {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat
+    }
+)
+
+const effectComposer = new EffectComposer(renderer, renderTarget)
+effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+effectComposer.setSize(sizes.width, sizes.height)
+
+const renderPass = new RenderPass(scene, camera)
+effectComposer.addPass(renderPass)
+
+// Dot Screen Pass
+const dotScreenPass = new DotScreenPass()
+dotScreenPass.enabled = false
+effectComposer.addPass(dotScreenPass)
+
+// Glitch Pass
+const glitchPass = new GlitchPass()
+glitchPass.goWild = false
+glitchPass.enabled = false
+effectComposer.addPass(glitchPass)
+
+// RGB Shift Pass
+const rgbShiftPass = new ShaderPass(RGBShiftShader)
+rgbShiftPass.enabled = false
+effectComposer.addPass(rgbShiftPass)
+
+// Gamma Corretion Pass
+const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader)
+gammaCorrectionPass.enabled = true
+effectComposer.addPass(gammaCorrectionPass)
+
+// SMAA Pass
+const smaaPass = new SMAAPass()
+smaaPass.enabled = false
+effectComposer.addPass(smaaPass)
+
 /**
  * Animate
  */
@@ -146,7 +202,8 @@ const tick = () =>
     controls.update()
 
     // Render
-    renderer.render(scene, camera)
+    // renderer.render(scene, camera)
+    effectComposer.render()
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
